@@ -131,3 +131,76 @@ str(RentCar)
 # Sin valores faltantes, semanas duplicadas ni semanas ausentes.
 # Week se convirtio a Date sin perder observaciones.
 # Se conservaron los datos originales sin eliminar registros.
+
+# Punto 2 - Construccion de los canales de Amazon
+# Identificar las columnas originales de publicidad
+colnames(RentCar)
+
+# Identificar columnas de costos de publicidad
+colnames(RentCar)[1:17]
+
+# Construir costos agregados de los canales de Amazon
+RentCar <- RentCar %>%
+  mutate(
+    Amazon_DSP_Cost =
+      DSP...Evergreen.Cost +
+      DSP...Seasonal.Cost,
+    
+    Amazon_Search_Cost =
+      Search...Men...Brand.Cost +
+      Search...Men...Non.Brand.Cost +
+      Search...Women...Brand.Cost +
+      Search...Women...Non.Brand.Cost,
+    
+    Amazon_Sponsored_Cost =
+      Sponsored.Brands.Paid.Search.Cost +
+      Sponsored.Display.Non.Brand.Cost +
+      Sponsored.Products.Brand.Search.Cost +
+      Sponsored.Products.NonBrand.Search.Cost
+  )
+
+# Verificar las variables de costos construidas
+summary(RentCar$Amazon_DSP_Cost)
+
+summary(RentCar$Amazon_Search_Cost)
+
+summary(RentCar$Amazon_Sponsored_Cost)
+
+# Construir impresiones agregadas de los canales de Amazon
+RentCar <- RentCar %>%
+  mutate(
+    Amazon_DSP_Impressions =
+      DSP...Evergreen.Impression +
+      DSP...Seasonal.Impression,
+    
+    Amazon_Search_Impressions =
+      Search...Men...Brand.Impression +
+      Search...Men...Non.Brand.Impression +
+      Search...Women...Brand.Impression +
+      Search...Women...Non.Brand.Impression,
+    
+    Amazon_Sponsored_Impressions =
+      Sponsored.Brands.Paid.Search.Impression +
+      Sponsored.Display.Non.Brand.Impression +
+      Sponsored.Products.Brand.Search.Impression +
+      Sponsored.Products.NonBrand.Search.Impression
+  )
+
+# Verificar las variables de impresiones construidas
+summary(RentCar$Amazon_DSP_Impressions)
+
+summary(RentCar$Amazon_Search_Impressions)
+
+summary(RentCar$Amazon_Sponsored_Impressions)
+
+# Verificar valores faltantes en las seis variables nuevas
+sum(is.na(RentCar$Amazon_DSP_Cost))
+sum(is.na(RentCar$Amazon_Search_Cost))
+sum(is.na(RentCar$Amazon_Sponsored_Cost))
+
+sum(is.na(RentCar$Amazon_DSP_Impressions))
+sum(is.na(RentCar$Amazon_Search_Impressions))
+sum(is.na(RentCar$Amazon_Sponsored_Impressions))
+
+# Confirmar dimensiones de la base ampliada
+dim(RentCar)
