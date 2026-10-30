@@ -1,6 +1,8 @@
 # CASO 3 - MARKETING DIGITAL Y DEMANDA DE ALQUILER DE VEHICULOS
 # Juliana Perez, Veronica Sandoval y Camila Salamanca
 
+library(dplyr)
+
 # PARTE A - PREPARACION Y EXPLORACION DE DATOS
 # Punto 1. Reconocimiento y validacion de la base
 
@@ -63,3 +65,69 @@ nrow(RentCar)
 
 # Identificar semanas faltantes
 setdiff(fechas_esperadas, RentCar$Week)
+
+# Identificar variables de respuesta
+summary(RentCar$Sales)
+summary(RentCar$Orders)
+
+# Revisar valores de las variables de respuesta
+min(RentCar$Sales)
+max(RentCar$Sales)
+
+min(RentCar$Orders)
+max(RentCar$Orders)
+
+# Revisar las variables economicas disponibles
+summary(RentCar$SP500)
+summary(RentCar$WEI)
+
+# Revisar distribucion de las variables de respuesta
+summary(RentCar$Sales)
+sd(RentCar$Sales)
+
+summary(RentCar$Orders)
+sd(RentCar$Orders)
+
+# Identificar semanas con ventas extremas
+RentCar %>%
+  filter(Sales == max(Sales))
+
+RentCar %>%
+  filter(Sales == min(Sales))
+
+# Identificar semanas con pedidos extremos
+RentCar %>%
+  filter(Orders == max(Orders))
+
+RentCar %>%
+  filter(Orders == min(Orders))
+
+# Resumir semanas con ventas extremas
+RentCar %>%
+  filter(Sales == max(Sales)) %>%
+  select(Week, Sales, Orders)
+
+RentCar %>%
+  filter(Sales == min(Sales)) %>%
+  select(Week, Sales, Orders)
+
+# Resumir semanas con pedidos extremos
+RentCar %>%
+  filter(Orders == max(Orders)) %>%
+  select(Week, Sales, Orders)
+
+RentCar %>%
+  filter(Orders == min(Orders)) %>%
+  select(Week, Sales, Orders)
+
+# Revisar nombres de las variables de publicidad
+colnames(RentCar)
+
+# Revisar la estructura de las variables
+str(RentCar)
+
+# Validacion inicial completada:
+# 135 observaciones y 33 variables.
+# Sin valores faltantes, semanas duplicadas ni semanas ausentes.
+# Week se convirtio a Date sin perder observaciones.
+# Se conservaron los datos originales sin eliminar registros.
