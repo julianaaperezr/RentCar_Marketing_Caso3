@@ -757,3 +757,35 @@ print(Datos_4 %>% arrange(desc(Sales)) %>% select(Week, Sales, Orders) %>% head(
 
 # Mostrar las cinco semanas con mayores ordenes.
 print(Datos_4 %>% arrange(desc(Orders)) %>% select(Week, Sales, Orders) %>% head(5))
+
+# PUNTO 5 - TRES REGRESIONES SIMPLES
+
+# Estimar la relacion entre las ventas y el costo DSP.
+modelo_5_DSP <- lm(Sales ~ Amazon_DSP_Cost, data = Datos_4)
+
+# Mostrar coeficientes, valores p y R cuadrado del modelo DSP.
+summary(modelo_5_DSP)
+
+# Mostrar intervalos de confianza del 95 por ciento del modelo DSP.
+confint(modelo_5_DSP)
+
+# Estimar la relacion entre las ventas y el costo Search.
+modelo_5_Search <- lm(Sales ~ Amazon_Search_Cost, data = Datos_4)
+
+# Mostrar los resultados del modelo Search.
+summary(modelo_5_Search)
+
+# Mostrar intervalos de confianza del modelo Search.
+confint(modelo_5_Search)
+
+# Estimar la relacion entre las ventas y el costo Sponsored.
+modelo_5_Sponsored <- lm(Sales ~ Amazon_Sponsored_Cost, data = Datos_4)
+
+# Mostrar los resultados del modelo Sponsored.
+summary(modelo_5_Sponsored)
+
+# Mostrar intervalos de confianza del modelo Sponsored.
+confint(modelo_5_Sponsored)
+
+# Comparar los coeficientes de los tres modelos simples.
+print(data.frame(Canal = c("DSP", "Search", "Sponsored"), Coeficiente = c(coef(modelo_5_DSP)[2], coef(modelo_5_Search)[2], coef(modelo_5_Sponsored)[2]), R2 = c(summary(modelo_5_DSP)$r.squared, summary(modelo_5_Search)$r.squared, summary(modelo_5_Sponsored)$r.squared)))
