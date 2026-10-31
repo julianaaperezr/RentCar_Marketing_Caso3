@@ -983,4 +983,3 @@ print(coef(summary(modelo_6_Sales)))
 print(coef(summary(modelo_6_Orders)))
 
 # Recordar que las regresiones muestran asociaciones y no demuestran ventas causadas por la publicidad.
-# Escribir el cierre de maximo 200 palabras despues de revisar estos resultados reales.
