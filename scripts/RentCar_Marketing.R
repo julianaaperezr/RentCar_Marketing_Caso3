@@ -967,3 +967,20 @@ print(data.frame(Mes = Datos_modelos$Mes, Residuo = residuals(modelo_6_Sales)) %
 
 # Interpretar: forma de embudo puede sugerir heterocedasticidad; rachas pueden sugerir autocorrelacion.
 # Distancia de Cook alta invita a revisar semanas, no a borrarlas automaticamente.
+
+# PUNTO 9 - APOYO PARA EL CIERRE EJECUTIVO
+
+# Identificar el camino con menor RMSE para las ventas en el periodo de evaluacion.
+print(comparacion_7 %>% filter(KPI == "Sales") %>% arrange(RMSE))
+
+# Identificar el camino con menor RMSE para las ordenes en el periodo de evaluacion.
+print(comparacion_7 %>% filter(KPI == "Orders") %>% arrange(RMSE))
+
+# Mostrar los coeficientes del modelo multiple de ventas para interpretarlos.
+print(coef(summary(modelo_6_Sales)))
+
+# Mostrar los coeficientes del modelo multiple de ordenes para interpretarlos.
+print(coef(summary(modelo_6_Orders)))
+
+# Recordar que las regresiones muestran asociaciones y no demuestran ventas causadas por la publicidad.
+# Escribir el cierre de maximo 200 palabras despues de revisar estos resultados reales.
