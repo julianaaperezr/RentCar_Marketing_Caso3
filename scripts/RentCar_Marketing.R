@@ -919,3 +919,51 @@ print(comparacion_7)
 
 # Recordar que el logaritmo cambia la escala y la dummy compara meses de temporada alta con otros meses.
 # Revisar y justificar los meses elegidos con el calendario comercial antes de entregar.
+
+
+# PUNTO 8 - DIAGNOSTICO Y MEJORA
+# Crear una funcion para revisar residuos y observaciones influyentes.
+revisar_modelo <- function(modelo, fechas, nombre) {
+  
+  # Preparar los valores ajustados, los residuos y las fechas.
+  revision <- data.frame(Week = fechas, Ajustado = fitted(modelo), Residuo = residuals(modelo))
+  
+  # Mostrar residuos frente a los valores ajustados.
+  print(ggplot(revision, aes(x = Ajustado, y = Residuo)) + geom_point() + geom_hline(yintercept = 0, linetype = "dashed") + labs(title = paste("Residuos y ajustados:", nombre)) + theme_minimal())
+  
+  # Mostrar residuos a lo largo de las semanas.
+  print(ggplot(revision, aes(x = Week, y = Residuo)) + geom_line() + geom_hline(yintercept = 0, linetype = "dashed") + labs(title = paste("Residuos en el tiempo:", nombre)) + theme_minimal())
+  
+  # Calcular una medida sencilla de autocorrelacion de una semana a otra.
+  print(cor(head(revision$Residuo, -1), tail(revision$Residuo, -1)))
+  
+  # Mostrar semanas con distancia de Cook superior a 4 dividido entre N.
+  print(which(cooks.distance(modelo) > 4 / nobs(modelo)))
+}
+
+# Revisar el modelo multiple de ventas con toda su muestra.
+revisar_modelo(modelo_6_Sales, Datos_modelos$Week, "Ventas multiples")
+
+# Revisar el modelo multiple de ordenes con toda su muestra.
+revisar_modelo(modelo_6_Orders, Datos_modelos$Week, "Ordenes multiples")
+
+# Revisar el modelo logaritmico de ventas con las semanas de entrenamiento.
+revisar_modelo(modelo_7_log_Sales, entrenamiento_7$Week, "Log ventas")
+
+# Revisar el modelo de temporada alta de ventas con las semanas de entrenamiento.
+revisar_modelo(modelo_7_dummy_Sales, entrenamiento_7$Week, "Temporada ventas")
+
+# Revisar el modelo logaritmico de ordenes con las semanas de entrenamiento.
+revisar_modelo(modelo_7_log_Orders, entrenamiento_7$Week, "Log ordenes")
+
+# Revisar el modelo de temporada alta de ordenes con las semanas de entrenamiento.
+revisar_modelo(modelo_7_dummy_Orders, entrenamiento_7$Week, "Temporada ordenes")
+
+# Revisar correlaciones entre todos los regresores usados en los modelos.
+print(round(cor(Datos_modelos %>% select(Amazon_DSP_Cost, Amazon_Search_Cost, Amazon_Sponsored_Cost, all_of(controles_6))), 2))
+
+# Revisar el patron de residuos por mes para buscar estacionalidad restante.
+print(data.frame(Mes = Datos_modelos$Mes, Residuo = residuals(modelo_6_Sales)) %>% group_by(Mes) %>% summarise(Residuo_Promedio = mean(Residuo), .groups = "drop"))
+
+# Interpretar: forma de embudo puede sugerir heterocedasticidad; rachas pueden sugerir autocorrelacion.
+# Distancia de Cook alta invita a revisar semanas, no a borrarlas automaticamente.
