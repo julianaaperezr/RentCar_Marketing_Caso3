@@ -830,3 +830,92 @@ confint(modelo_6_Orders)
 
 # Recordar que H0 dice que cada coeficiente es cero y H1 que es diferente de cero.
 # Un valor p menor a 0.05 aporta evidencia contra H0, pero no prueba causalidad.
+
+# PUNTO 7 - LOGARITMOS Y TEMPORADA ALTA
+
+# Comprobar que las ventas y ordenes sean positivas.
+stopifnot(all(Datos_modelos$Sales > 0), all(Datos_modelos$Orders > 0))
+
+# Crear una variable de temporada alta usando junio, julio, noviembre y diciembre como hipotesis de calendario.
+Datos_modelos <- Datos_modelos %>% mutate(Mes = as.integer(format(Week, "%m")), Temporada_Alta = ifelse(Mes %in% c(6, 7, 11, 12), 1, 0))
+
+# Revisar cuantas semanas se clasificaron como temporada alta.
+table(Datos_modelos$Temporada_Alta)
+
+# Dividir los datos por fecha: primeras 80 por ciento semanas para entrenar.
+corte_7 <- floor(nrow(Datos_modelos) * 0.80)
+
+# Preparar las semanas de entrenamiento.
+entrenamiento_7 <- Datos_modelos[1:corte_7, ]
+
+# Preparar las semanas posteriores para evaluar predicciones.
+evaluacion_7 <- Datos_modelos[(corte_7 + 1):nrow(Datos_modelos), ]
+
+# Crear la formula de ventas con logaritmo natural.
+formula_log_sales <- update(formula_ventas, log(Sales) ~ .)
+
+# Crear la formula de ordenes con logaritmo natural.
+formula_log_orders <- update(formula_ordenes, log(Orders) ~ .)
+
+# Crear la formula de ventas con una dummy de temporada alta.
+formula_dummy_sales <- update(formula_ventas, . ~ . + Temporada_Alta)
+
+# Crear la formula de ordenes con una dummy de temporada alta.
+formula_dummy_orders <- update(formula_ordenes, . ~ . + Temporada_Alta)
+
+# Entrenar el modelo de ventas con logaritmos.
+modelo_7_log_Sales <- lm(formula_log_sales, data = entrenamiento_7)
+
+# Mostrar sus resultados.
+summary(modelo_7_log_Sales)
+
+# Entrenar el modelo de ordenes con logaritmos.
+modelo_7_log_Orders <- lm(formula_log_orders, data = entrenamiento_7)
+
+# Mostrar sus resultados.
+summary(modelo_7_log_Orders)
+
+# Entrenar el modelo de ventas con temporada alta.
+modelo_7_dummy_Sales <- lm(formula_dummy_sales, data = entrenamiento_7)
+
+# Mostrar sus resultados.
+summary(modelo_7_dummy_Sales)
+
+# Entrenar el modelo de ordenes con temporada alta.
+modelo_7_dummy_Orders <- lm(formula_dummy_orders, data = entrenamiento_7)
+
+# Mostrar sus resultados.
+summary(modelo_7_dummy_Orders)
+
+# Calcular el factor de correccion al volver de logaritmos a la escala original.
+factor_log_sales <- mean(exp(residuals(modelo_7_log_Sales)))
+
+# Calcular el mismo factor para ordenes.
+factor_log_orders <- mean(exp(residuals(modelo_7_log_Orders)))
+
+# Predecir ventas del modelo logaritmico en la escala original.
+pred_log_sales <- exp(predict(modelo_7_log_Sales, newdata = evaluacion_7)) * factor_log_sales
+
+# Predecir ventas del modelo de temporada alta.
+pred_dummy_sales <- predict(modelo_7_dummy_Sales, newdata = evaluacion_7)
+
+# Predecir ordenes del modelo logaritmico en la escala original.
+pred_log_orders <- exp(predict(modelo_7_log_Orders, newdata = evaluacion_7)) * factor_log_orders
+
+# Predecir ordenes del modelo de temporada alta.
+pred_dummy_orders <- predict(modelo_7_dummy_Orders, newdata = evaluacion_7)
+
+# Crear una funcion sencilla para calcular el error absoluto medio.
+calcular_MAE <- function(real, predicho) mean(abs(real - predicho))
+
+# Crear una funcion para calcular la raiz del error cuadratico medio.
+calcular_RMSE <- function(real, predicho) sqrt(mean((real - predicho)^2))
+
+# Comparar los errores de prediccion de ambos caminos en la misma escala.
+comparacion_7 <- data.frame(KPI = c("Sales", "Sales", "Orders", "Orders"), Camino = c("Logaritmo", "Temporada alta", "Logaritmo", "Temporada alta"), MAE = c(calcular_MAE(evaluacion_7$Sales, pred_log_sales), calcular_MAE(evaluacion_7$Sales, pred_dummy_sales), calcular_MAE(evaluacion_7$Orders, pred_log_orders), calcular_MAE(evaluacion_7$Orders, pred_dummy_orders)), RMSE = c(calcular_RMSE(evaluacion_7$Sales, pred_log_sales), calcular_RMSE(evaluacion_7$Sales, pred_dummy_sales), calcular_RMSE(evaluacion_7$Orders, pred_log_orders), calcular_RMSE(evaluacion_7$Orders, pred_dummy_orders)))
+
+# Mostrar la tabla de comparacion: errores menores indican mejores predicciones en este periodo.
+print(comparacion_7)
+
+# Recordar que el logaritmo cambia la escala y la dummy compara meses de temporada alta con otros meses.
+# Revisar y justificar los meses elegidos con el calendario comercial antes de entregar.
