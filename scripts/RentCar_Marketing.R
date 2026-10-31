@@ -789,3 +789,44 @@ confint(modelo_5_Sponsored)
 
 # Comparar los coeficientes de los tres modelos simples.
 print(data.frame(Canal = c("DSP", "Search", "Sponsored"), Coeficiente = c(coef(modelo_5_DSP)[2], coef(modelo_5_Search)[2], coef(modelo_5_Sponsored)[2]), R2 = c(summary(modelo_5_DSP)$r.squared, summary(modelo_5_Search)$r.squared, summary(modelo_5_Sponsored)$r.squared)))
+
+# PUNTO 6 - REGRESIONES MULTIPLES CON CONTROLES
+
+# Revisar las correlaciones entre las variables externas antes de elegir controles.
+print(round(cor(Datos_4 %>% select(SP500, WEI, Brand, NonBrand, Precio_Gasolina, Tasa_Interes), use = "pairwise.complete.obs"), 2))
+
+# Elegir Brand, WEI, gasolina y tasa como controles iniciales; revisar su dependencia con los resultados.
+controles_6 <- c("Brand", "WEI", "Precio_Gasolina", "Tasa_Interes")
+
+# Mantener una muestra comun sin datos faltantes y ordenada por semana.
+Datos_modelos <- Datos_4 %>% select(Week, Sales, Orders, Amazon_DSP_Cost, Amazon_Search_Cost, Amazon_Sponsored_Cost, all_of(controles_6)) %>% tidyr::drop_na() %>% arrange(Week)
+
+# Mostrar cuantas semanas se pueden usar en las regresiones.
+nrow(Datos_modelos)
+
+# Crear la formula que usaran las regresiones.
+formula_ventas <- Sales ~ Amazon_DSP_Cost + Amazon_Search_Cost + Amazon_Sponsored_Cost + Brand + WEI + Precio_Gasolina + Tasa_Interes
+
+# Estimar las ventas usando los costos y los controles.
+modelo_6_Sales <- lm(formula_ventas, data = Datos_modelos)
+
+# Mostrar coeficientes, pruebas t, valores p, R cuadrado y prueba F.
+summary(modelo_6_Sales)
+
+# Mostrar los intervalos de confianza del 95 por ciento.
+confint(modelo_6_Sales)
+
+# Crear la formula para explicar las ordenes.
+formula_ordenes <- update(formula_ventas, Orders ~ .)
+
+# Estimar las ordenes usando los mismos costos y controles.
+modelo_6_Orders <- lm(formula_ordenes, data = Datos_modelos)
+
+# Mostrar los resultados de las ordenes.
+summary(modelo_6_Orders)
+
+# Mostrar intervalos de confianza para las ordenes.
+confint(modelo_6_Orders)
+
+# Recordar que H0 dice que cada coeficiente es cero y H1 que es diferente de cero.
+# Un valor p menor a 0.05 aporta evidencia contra H0, pero no prueba causalidad.
