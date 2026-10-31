@@ -2,6 +2,9 @@
 # Juliana Perez, Veronica Sandoval y Camila Salamanca
 
 library(dplyr)
+install.packages("ggplot2")
+library(ggplot2)
+
 
 # PARTE A - PREPARACION Y EXPLORACION DE DATOS
 # Punto 1. Reconocimiento y validacion de la base
@@ -692,3 +695,65 @@ sum(is.na(RentCar_Ampliada$Brand))
 sum(is.na(RentCar_Ampliada$NonBrand))
 sum(is.na(RentCar_Ampliada$Precio_Gasolina))
 sum(is.na(RentCar_Ampliada$Tasa_Interes))
+
+# PUNTO 4 - EXPLORACION Y ESTADISTICAS DESCRIPTIVAS
+# Ordenar las semanas para estudiar los datos en el tiempo.
+
+Datos_4 <- RentCar_Ampliada %>% arrange(Week)
+
+# Seleccionar las variables
+variables_4 <- c("Sales", "Orders", "Amazon_DSP_Cost", "Amazon_Search_Cost", "Amazon_Sponsored_Cost", "Amazon_DSP_Impressions", "Amazon_Search_Impressions", "Amazon_Sponsored_Impressions", "SP500", "WEI", "Brand", "NonBrand", "Precio_Gasolina", "Tasa_Interes")
+
+# Comprobar que las columnas necesarias existan.
+stopifnot(all(variables_4 %in% names(Datos_4)))
+
+# Preparar una tabla con las variables numericas.
+tabla_4 <- Datos_4 %>% select(all_of(variables_4))
+
+# Calcular cantidad de datos, media, desviacion, minimo y maximo por variable.
+descriptivos_4 <- data.frame(Variable = variables_4, N = sapply(tabla_4, function(x) sum(!is.na(x))), Media = sapply(tabla_4, function(x) mean(x, na.rm = TRUE)), Desviacion = sapply(tabla_4, function(x) sd(x, na.rm = TRUE)), Minimo = sapply(tabla_4, function(x) min(x, na.rm = TRUE)), Maximo = sapply(tabla_4, function(x) max(x, na.rm = TRUE)))
+
+# Mostrar la tabla de estadisticas descriptivas.
+print(descriptivos_4)
+
+# Dibujar la evolucion semanal de las ventas.
+print(ggplot(Datos_4, aes(x = Week, y = Sales)) + geom_line(color = "steelblue") + labs(title = "Ventas por semana", x = "Semana", y = "Sales") + theme_minimal())
+
+# Dibujar la evolucion semanal de las ordenes.
+print(ggplot(Datos_4, aes(x = Week, y = Orders)) + geom_line(color = "darkgreen") + labs(title = "Ordenes por semana", x = "Semana", y = "Orders") + theme_minimal())
+
+# Preparar una tabla con los tres costos de Amazon.
+costos_4 <- Datos_4 %>% select(Week, Amazon_DSP_Cost, Amazon_Search_Cost, Amazon_Sponsored_Cost)
+
+# Convertir los tres costos en dos columnas para graficarlos juntos.
+costos_largos_4 <- tidyr::pivot_longer(costos_4, cols = -Week, names_to = "Canal", values_to = "Costo")
+
+# Mostrar los costos de los tres canales a lo largo del tiempo.
+print(ggplot(costos_largos_4, aes(x = Week, y = Costo, color = Canal)) + geom_line() + labs(title = "Costos semanales de Amazon", x = "Semana", y = "Costo") + theme_minimal())
+
+# Mostrar la relacion entre el costo DSP y las ventas.
+print(ggplot(Datos_4, aes(x = Amazon_DSP_Cost, y = Sales)) + geom_point() + geom_smooth(method = "lm", se = FALSE) + labs(title = "DSP y ventas") + theme_minimal())
+
+# Mostrar la relacion entre el costo Search y las ventas.
+print(ggplot(Datos_4, aes(x = Amazon_Search_Cost, y = Sales)) + geom_point() + geom_smooth(method = "lm", se = FALSE) + labs(title = "Search y ventas") + theme_minimal())
+
+# Mostrar la relacion entre el costo Sponsored y las ventas.
+print(ggplot(Datos_4, aes(x = Amazon_Sponsored_Cost, y = Sales)) + geom_point() + geom_smooth(method = "lm", se = FALSE) + labs(title = "Sponsored y ventas") + theme_minimal())
+
+# Calcular la matriz de covarianzas con las variables seleccionadas.
+covarianzas_4 <- cov(tabla_4, use = "pairwise.complete.obs")
+
+# Mostrar las covarianzas de Sales con las demas variables.
+print(covarianzas_4["Sales", , drop = FALSE])
+
+# Calcular la matriz de correlaciones para comparar distintas escalas.
+correlaciones_4 <- cor(tabla_4, use = "pairwise.complete.obs")
+
+# Mostrar la matriz de correlaciones.
+print(round(correlaciones_4, 3))
+
+# Mostrar las cinco semanas con mayores ventas.
+print(Datos_4 %>% arrange(desc(Sales)) %>% select(Week, Sales, Orders) %>% head(5))
+
+# Mostrar las cinco semanas con mayores ordenes.
+print(Datos_4 %>% arrange(desc(Orders)) %>% select(Week, Sales, Orders) %>% head(5))
