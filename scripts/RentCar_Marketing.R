@@ -204,3 +204,491 @@ sum(is.na(RentCar$Amazon_Sponsored_Impressions))
 
 # Confirmar dimensiones de la base ampliada
 dim(RentCar)
+
+# Punto 3 - Ampliacion de la base con variables de control
+# 3.1. Preparación de Google Trends Brand - Enterprise Rent-A-Car
+# Importar referencia mensual de Google Trends
+
+GoogleTrends_Referencia <- read.csv(
+  "data/original/GoogleTrends_Enterprise_Referencia.csv",
+  skip = 1,
+  header = FALSE
+)
+
+
+# Importar datos semanales de 2024
+GoogleTrends_2024 <- read.csv(
+  "data/original/GoogleTrends_Enterprise_2024.csv",
+  skip = 1,
+  header = FALSE
+)
+
+
+# Importar datos semanales de 2025
+GoogleTrends_2025 <- read.csv(
+  "data/original/GoogleTrends_Enterprise_2025.csv",
+  skip = 1,
+  header = FALSE
+)
+
+
+# Importar datos semanales de 2026
+GoogleTrends_2026 <- read.csv(
+  "data/original/GoogleTrends_Enterprise_2026.csv",
+  skip = 1,
+  header = FALSE
+)
+
+
+# Convertir las fechas al formato Date
+GoogleTrends_Referencia$V1 <- as.Date(
+  GoogleTrends_Referencia$V1,
+  format = "%Y-%m-%d"
+)
+
+GoogleTrends_2024$V1 <- as.Date(
+  GoogleTrends_2024$V1,
+  format = "%Y-%m-%d"
+)
+
+GoogleTrends_2025$V1 <- as.Date(
+  GoogleTrends_2025$V1,
+  format = "%Y-%m-%d"
+)
+
+GoogleTrends_2026$V1 <- as.Date(
+  GoogleTrends_2026$V1,
+  format = "%Y-%m-%d"
+)
+
+
+# Verificar estructura de los archivos
+str(GoogleTrends_Referencia)
+str(GoogleTrends_2024)
+str(GoogleTrends_2025)
+str(GoogleTrends_2026)
+
+
+# Verificar cantidad de observaciones
+nrow(GoogleTrends_Referencia)
+nrow(GoogleTrends_2024)
+nrow(GoogleTrends_2025)
+nrow(GoogleTrends_2026)
+
+
+# Verificar fechas iniciales y finales
+min(GoogleTrends_Referencia$V1)
+max(GoogleTrends_Referencia$V1)
+
+min(GoogleTrends_2024$V1)
+max(GoogleTrends_2024$V1)
+
+min(GoogleTrends_2025$V1)
+max(GoogleTrends_2025$V1)
+
+min(GoogleTrends_2026$V1)
+max(GoogleTrends_2026$V1)
+
+
+# Verificar valores faltantes
+sum(is.na(GoogleTrends_Referencia$V1))
+sum(is.na(GoogleTrends_Referencia$V2))
+
+sum(is.na(GoogleTrends_2024$V1))
+sum(is.na(GoogleTrends_2024$V2))
+
+sum(is.na(GoogleTrends_2025$V1))
+sum(is.na(GoogleTrends_2025$V2))
+
+sum(is.na(GoogleTrends_2026$V1))
+sum(is.na(GoogleTrends_2026$V2))
+
+
+# Preparar la serie semanal de 2024
+GoogleTrends_2024_preparado <- GoogleTrends_2024 %>%
+  select(V1, V2)
+
+colnames(GoogleTrends_2024_preparado) <- c(
+  "Fecha",
+  "Indice_GoogleTrends"
+)
+
+
+# Preparar la serie semanal de 2025
+GoogleTrends_2025_preparado <- GoogleTrends_2025 %>%
+  select(V1, V2)
+
+colnames(GoogleTrends_2025_preparado) <- c(
+  "Fecha",
+  "Indice_GoogleTrends"
+)
+
+
+# Preparar la serie semanal de 2026
+GoogleTrends_2026_preparado <- GoogleTrends_2026 %>%
+  select(V1, V2)
+
+colnames(GoogleTrends_2026_preparado) <- c(
+  "Fecha",
+  "Indice_GoogleTrends"
+)
+
+
+# Verificar semanas compartidas entre las descargas
+# Semana compartida entre 2024 y 2025
+GoogleTrends_2024_preparado %>%
+  filter(Fecha == as.Date("2024-12-29"))
+
+GoogleTrends_2025_preparado %>%
+  filter(Fecha == as.Date("2024-12-29"))
+
+
+# Semana compartida entre 2025 y 2026
+GoogleTrends_2025_preparado %>%
+  filter(Fecha == as.Date("2025-12-28"))
+
+GoogleTrends_2026_preparado %>%
+  filter(Fecha == as.Date("2025-12-28"))
+
+# 3.2. Empalmar las series semanales de Google Trends Brand
+# Factores de ajuste usando las semanas compartidas
+factor_2025 <- 66 / 55
+factor_2026 <- factor_2025 * (70 / 45)
+
+# Mantener 2024 como escala de referencia
+Brand_2024 <- GoogleTrends_2024_preparado %>%
+  mutate(Brand = Indice_GoogleTrends) %>%
+  select(Fecha, Brand)
+
+# Ajustar la escala de 2025
+Brand_2025 <- GoogleTrends_2025_preparado %>%
+  mutate(Brand = Indice_GoogleTrends * factor_2025) %>%
+  filter(Fecha > as.Date("2024-12-29")) %>%
+  select(Fecha, Brand)
+
+# Ajustar la escala de 2026
+Brand_2026 <- GoogleTrends_2026_preparado %>%
+  mutate(Brand = Indice_GoogleTrends * factor_2026) %>%
+  filter(Fecha > as.Date("2025-12-28")) %>%
+  select(Fecha, Brand)
+
+# Construir la serie completa
+GoogleTrends_Brand <- dplyr::bind_rows(
+  Brand_2024,
+  Brand_2025,
+  Brand_2026
+)
+
+# Verificar cobertura
+nrow(GoogleTrends_Brand)
+min(GoogleTrends_Brand$Fecha)
+max(GoogleTrends_Brand$Fecha)
+
+# 3.3. Preparación de Google Trends Non-Brand - Car Rental
+# Importar los tres archivos semanales
+NonBrand_2024 <- read.csv(
+  "data/original/GoogleTrends_CarRental_2024.csv",
+  skip = 1,
+  header = FALSE
+)
+
+NonBrand_2025 <- read.csv(
+  "data/original/GoogleTrends_CarRental_2025.csv",
+  skip = 1,
+  header = FALSE
+)
+
+NonBrand_2026 <- read.csv(
+  "data/original/GoogleTrends_CarRental_2026.csv",
+  skip = 1,
+  header = FALSE
+)
+
+
+# Convertir las fechas
+NonBrand_2024$V1 <- as.Date(NonBrand_2024$V1, format = "%Y-%m-%d")
+NonBrand_2025$V1 <- as.Date(NonBrand_2025$V1, format = "%Y-%m-%d")
+NonBrand_2026$V1 <- as.Date(NonBrand_2026$V1, format = "%Y-%m-%d")
+
+
+# Preparar los nombres de las columnas
+colnames(NonBrand_2024) <- c("Fecha", "NonBrand")
+colnames(NonBrand_2025) <- c("Fecha", "NonBrand")
+colnames(NonBrand_2026) <- c("Fecha", "NonBrand")
+
+
+# Verificar cobertura y fechas compartidas
+nrow(NonBrand_2024)
+nrow(NonBrand_2025)
+nrow(NonBrand_2026)
+
+tail(NonBrand_2024, 1)
+head(NonBrand_2025, 1)
+
+tail(NonBrand_2025, 1)
+head(NonBrand_2026, 1)
+
+# 3.4. Empalme de Google Trends Non-Brand
+# Calcular factores de ajuste
+factor_nonbrand_2025 <- 75 / 63
+factor_nonbrand_2026 <- factor_nonbrand_2025 * (67 / 61)
+
+# Mantener 2024 como referencia
+NonBrand_2024_ajustado <- NonBrand_2024 %>%
+  select(Fecha, NonBrand)
+
+# Ajustar 2025
+NonBrand_2025_ajustado <- NonBrand_2025 %>%
+  mutate(NonBrand = NonBrand * factor_nonbrand_2025) %>%
+  filter(Fecha > as.Date("2024-12-29")) %>%
+  select(Fecha, NonBrand)
+
+# Ajustar 2026
+NonBrand_2026_ajustado <- NonBrand_2026 %>%
+  mutate(NonBrand = NonBrand * factor_nonbrand_2026) %>%
+  filter(Fecha > as.Date("2025-12-28")) %>%
+  select(Fecha, NonBrand)
+
+# Construir una sola serie semanal
+GoogleTrends_NonBrand <- dplyr::bind_rows(
+  NonBrand_2024_ajustado,
+  NonBrand_2025_ajustado,
+  NonBrand_2026_ajustado
+)
+
+# Verificar cobertura
+nrow(GoogleTrends_NonBrand)
+min(GoogleTrends_NonBrand$Fecha)
+max(GoogleTrends_NonBrand$Fecha)
+
+# 3.5. Preparación de la variable de control: precio de gasolina
+# Importar datos semanales de gasolina
+Gasolina_USA <- read.csv(
+  "data/original/Gasolina_USA.csv"
+)
+
+# Convertir fechas
+Gasolina_USA$observation_date <- as.Date(
+  Gasolina_USA$observation_date,
+  format = "%Y-%m-%d"
+)
+
+# Revisar estructura y fechas
+str(Gasolina_USA)
+head(Gasolina_USA)
+tail(Gasolina_USA)
+
+# 3.6. Preparación semanal del precio de gasolina
+# Seleccionar el período de análisis
+Gasolina_USA_preparada <- Gasolina_USA %>%
+  filter(
+    observation_date >= as.Date("2024-01-01"),
+    observation_date <= as.Date("2026-10-26")
+  ) %>%
+  select(observation_date, GASREGW)
+
+# Renombrar las columnas
+colnames(Gasolina_USA_preparada) <- c(
+  "Fecha",
+  "Precio_Gasolina"
+)
+
+# Verificar cobertura
+nrow(Gasolina_USA_preparada)
+head(Gasolina_USA_preparada)
+tail(Gasolina_USA_preparada)
+
+# 3.7. Preparación de la tasa de interés de Estados Unidos
+# Importar datos diarios
+Tasa_Interes_USA <- read.csv(
+  "data/original/Tasa_Interes_USA.csv"
+)
+
+# Convertir fechas
+Tasa_Interes_USA$observation_date <- as.Date(
+  Tasa_Interes_USA$observation_date,
+  format = "%Y-%m-%d"
+)
+
+# Seleccionar período de análisis
+Tasa_Interes_USA_preparada <- Tasa_Interes_USA %>%
+  filter(
+    observation_date >= as.Date("2024-01-01"),
+    observation_date <= as.Date("2026-10-30")
+  )
+
+# Verificar estructura y cobertura
+str(Tasa_Interes_USA_preparada)
+head(Tasa_Interes_USA_preparada)
+tail(Tasa_Interes_USA_preparada)
+
+# 3.8. Preparación semanal de la tasa de interés
+# Crear fechas semanales correspondientes a RentCar
+Fechas_Semanales <- data.frame(
+  Fecha = seq(
+    as.Date("2024-01-07"),
+    as.Date("2026-10-25"),
+    by = "week"
+  )
+)
+
+# Para cada domingo, seleccionar la última observación disponible
+Tasa_Interes_Semanal <- Fechas_Semanales %>%
+  left_join(
+    Tasa_Interes_USA_preparada %>%
+      mutate(Fecha = observation_date),
+    by = "Fecha"
+  ) %>%
+  select(Fecha, DFF)
+
+# Renombrar la variable
+colnames(Tasa_Interes_Semanal) <- c(
+  "Fecha",
+  "Tasa_Interes"
+)
+
+# Verificar resultados
+nrow(Tasa_Interes_Semanal)
+head(Tasa_Interes_Semanal)
+tail(Tasa_Interes_Semanal)
+sum(is.na(Tasa_Interes_Semanal$Tasa_Interes))
+
+colnames(RentCar)
+
+# 3.9. Integración de variables de control con RentCar
+# Confirmar formato de las fechas
+str(RentCar$Week)
+
+# Convertir fechas si es necesario
+RentCar$Week <- as.Date(RentCar$Week)
+
+# Alinear gasolina con las semanas de RentCar
+# La observación del lunes se asigna al domingo siguiente
+
+Gasolina_Semanal <- Gasolina_USA_preparada %>%
+  mutate(Fecha = Fecha + 6)
+
+# Integrar las cuatro variables
+RentCar_Ampliada <- RentCar %>%
+  left_join(
+    GoogleTrends_Brand,
+    by = c("Week" = "Fecha")
+  ) %>%
+  left_join(
+    GoogleTrends_NonBrand,
+    by = c("Week" = "Fecha")
+  ) %>%
+  left_join(
+    Gasolina_Semanal %>%
+      select(Fecha, Precio_Gasolina),
+    by = c("Week" = "Fecha")
+  ) %>%
+  left_join(
+    Tasa_Interes_Semanal,
+    by = c("Week" = "Fecha")
+  )
+
+# Verificar tamaño de la muestra
+nrow(RentCar)
+nrow(RentCar_Ampliada)
+
+# Verificar valores faltantes en las nuevas variables
+sum(is.na(RentCar_Ampliada$Brand))
+sum(is.na(RentCar_Ampliada$NonBrand))
+sum(is.na(RentCar_Ampliada$Precio_Gasolina))
+sum(is.na(RentCar_Ampliada$Tasa_Interes))
+
+# Verificar primeras observaciones
+RentCar_Ampliada %>%
+  select(
+    Week,
+    Brand,
+    NonBrand,
+    Precio_Gasolina,
+    Tasa_Interes
+  ) %>%
+  head()
+
+# 3.10. Ajuste temporal de las variables económicas
+# Conservar la base integrada original
+RentCar_Ampliada_Preliminar <- RentCar_Ampliada
+
+# Usar información económica de dos semanas anteriores
+RentCar_Ampliada <- RentCar_Ampliada %>%
+  mutate(
+    Precio_Gasolina = lag(Precio_Gasolina, 2),
+    Tasa_Interes = lag(Tasa_Interes, 2)
+  )
+
+# Verificar muestra y valores faltantes
+nrow(RentCar_Ampliada)
+
+sum(is.na(RentCar_Ampliada$Precio_Gasolina))
+sum(is.na(RentCar_Ampliada$Tasa_Interes))
+
+# 3.10. Ajuste temporal de las variables económicas
+# Conservar la base integrada preliminar
+RentCar_Ampliada_Preliminar <- RentCar_Ampliada
+
+# Preparar gasolina incluyendo semanas anteriores
+Gasolina_Historica <- Gasolina_USA %>%
+  filter(
+    observation_date >= as.Date("2023-12-01"),
+    observation_date <= as.Date("2026-10-26")
+  ) %>%
+  mutate(Fecha = observation_date + 6) %>%
+  select(Fecha, GASREGW)
+
+colnames(Gasolina_Historica) <- c(
+  "Fecha",
+  "Precio_Gasolina"
+)
+
+# Preparar tasa de interés incluyendo semanas anteriores
+Tasa_Historica <- Tasa_Interes_USA %>%
+  filter(
+    observation_date >= as.Date("2023-12-01"),
+    observation_date <= as.Date("2026-10-29")
+  ) %>%
+  filter(as.POSIXlt(observation_date)$wday == 0) %>%
+  select(observation_date, DFF)
+
+colnames(Tasa_Historica) <- c(
+  "Fecha",
+  "Tasa_Interes"
+)
+
+# Aplicar rezago de dos semanas mediante las fechas
+Gasolina_Historica <- Gasolina_Historica %>%
+  mutate(Fecha = Fecha + 14)
+
+Tasa_Historica <- Tasa_Historica %>%
+  mutate(Fecha = Fecha + 14)
+
+# Reconstruir la base ampliada
+RentCar_Ampliada <- RentCar %>%
+  left_join(
+    GoogleTrends_Brand,
+    by = c("Week" = "Fecha")
+  ) %>%
+  left_join(
+    GoogleTrends_NonBrand,
+    by = c("Week" = "Fecha")
+  ) %>%
+  left_join(
+    Gasolina_Historica,
+    by = c("Week" = "Fecha")
+  ) %>%
+  left_join(
+    Tasa_Historica,
+    by = c("Week" = "Fecha")
+  )
+
+# Validación final
+nrow(RentCar_Ampliada)
+ncol(RentCar_Ampliada)
+
+sum(is.na(RentCar_Ampliada$Brand))
+sum(is.na(RentCar_Ampliada$NonBrand))
+sum(is.na(RentCar_Ampliada$Precio_Gasolina))
+sum(is.na(RentCar_Ampliada$Tasa_Interes))
